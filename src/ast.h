@@ -1,38 +1,37 @@
 #ifndef AST_H
 #define AST_H
 
-typedef enum value_type {
-	VAL_INT,
-	VAL_FLOAT,
-	VAL_CHAR,
-	VAL_STRING,
-} value_type;
-
-typedef union value_data {
-	int	  int_value;
-	float float_value;
-	char  char_value;
-	char* string_value;
-} value_data;
+#include "lexer.h"
 
 typedef enum ast_nodetype {
+	NODE_ROOT,
 	NODE_INDETIFIER,
 	NODE_FUNCTION,
 } ast_nodetype;
 
 typedef struct ast_node {
-	ast_nodetype type;
-	char* name;
+	ast_nodetype tag;
+	int token_index;
 
-	value_type value_type;
-	value_data value;
-
-	// functions
-	int arg_count;
-	ast_node** args;
-
-	ast_node* left;
-	ast_node* right;
+	union {
+		struct {
+			int *ast_indices;
+			int count;
+		} node_array;
+		struct {
+			int node_l;
+			int node_r;
+		} two_nodes;
+	} data;
 } ast_node;
+
+typedef struct {
+	ast_node *nodes;
+	int count;
+	int allocated;
+	int root_index;
+} ast_tree;
+
+ast_tree* ast_create(token* tokens, int token_count);
 
 #endif
