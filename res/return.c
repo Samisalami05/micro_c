@@ -1,3 +1,4 @@
-int main() {
-	return 2;
+int main(int argc, char* argv[]) {
+	char* w = "wow";
+	return 2 + 3;
 }

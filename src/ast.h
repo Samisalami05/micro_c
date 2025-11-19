@@ -5,12 +5,20 @@
 
 typedef enum ast_nodetype {
 	NODE_ROOT,
-	NODE_INDETIFIER,
-	NODE_FUNCTION,
+	NODE_INDENTIFIER,
+	NODE_CONSTANT,
+	NODE_STRING_LITERAL,
+	NODE_EXPRESSION,
+
+	NODE_FUNC_DECL,
+	NODE_BLOCK, // Internal block of the function
+	
+	NODE_RETURN,
+	BINARY_OP,
 } ast_nodetype;
 
 typedef struct ast_node {
-	ast_nodetype tag;
+	ast_nodetype type;
 	int token_index;
 
 	union {
@@ -32,6 +40,6 @@ typedef struct {
 	int root_index;
 } ast_tree;
 
-ast_tree* ast_create(token* tokens, int token_count);
+ast_tree* ast_create(token** tokens, int token_count);
 
 #endif

@@ -89,7 +89,18 @@ token* scan_token(char* buffer, int* i) {
 		case ')': return create_token(TOKEN_PARENTHESIS_CLOSE, &buffer[*i - 1], 1);
 		case '{': return create_token(TOKEN_BRACE_OPEN, &buffer[*i - 1], 1);
 		case '}': return create_token(TOKEN_BRACE_CLOSE, &buffer[*i - 1], 1);
+		case '[': return create_token(TOKEN_BRACKET_OPEN, &buffer[*i - 1], 1);
+		case ']': return create_token(TOKEN_BRACKET_CLOSE, &buffer[*i - 1], 1);
+
 		case ';': return create_token(TOKEN_SEMICOLON, &buffer[*i - 1], 1);
+		case ',': return create_token(TOKEN_COMMA, &buffer[*i - 1], 1);
+		
+		case '=': return create_token(TOKEN_EQUALS, &buffer[*i - 1], 1);
+		case '+': return create_token(TOKEN_PLUS, &buffer[*i - 1], 1);
+		case '-': return create_token(TOKEN_MINUS, &buffer[*i - 1], 1);
+		case '*': return create_token(TOKEN_STAR, &buffer[*i - 1], 1);
+		case '/': return create_token(TOKEN_SLASH, &buffer[*i - 1], 1);
+		case '%': return create_token(TOKEN_PROCENT, &buffer[*i - 1], 1);
 		
 		case '"': return string(buffer, i);
 	}
