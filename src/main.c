@@ -1,3 +1,4 @@
+#include "compiler/parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -52,7 +53,8 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 
-	ast_tree* ast = ast_create(tokens, token_count);
+	ast_tree* ast = ast_create();
+	parse(ast, tokens);
 	ast_print(ast, tokens);
 	return 0;
 }

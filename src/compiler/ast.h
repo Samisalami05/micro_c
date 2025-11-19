@@ -5,7 +5,7 @@
 
 typedef enum ast_nodetype {
 	NODE_ROOT,
-	NODE_INDENTIFIER,
+	NODE_IDENTIFIER,
 	NODE_NUMBER,
 	NODE_STRING_LITERAL,
 	NODE_EXPRESSION,
@@ -40,7 +40,9 @@ typedef struct {
 	int root_index;
 } ast_tree;
 
-ast_tree* ast_create(token** tokens, int token_count);
+int init_node(ast_tree* ast, int pos, ast_nodetype type);
+
+ast_tree* ast_create();
 
 void ast_print(ast_tree* ast, token** tokens);
 

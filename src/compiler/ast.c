@@ -1,19 +1,20 @@
 #include <compiler/ast.h>
-#include <compiler/lexer.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define ALLOC_COUNT 10
 
-int parse_add_expr(ast_tree* ast, token** tokens, int* pos);
-int parse_mul_expr(ast_tree* ast, token** tokens, int* pos);
+// Ast
+static char node_has_two(ast_node node);
+static void validate_size(ast_tree* ast, int num);
 
 static char node_has_two(ast_node node) {
 	return node.type == NODE_BINARY_OP;
 }
 
-void init_root(ast_node* root) {
+static void init_root(ast_node* root) {
 	root->type = NODE_ROOT;
 	root->token_index = -1;
 	root->data.node_array.count = 0;
@@ -26,13 +27,6 @@ void validate_size(ast_tree* ast, int num) {
 	}
 }
 
-char is_operator(token* token) {
-	TokenType type = token->type;
-	return type == TOKEN_EQUALS || type == TOKEN_PLUS ||
-		type == TOKEN_MINUS || type == TOKEN_STAR ||
-		type == TOKEN_SLASH || type == TOKEN_PROCENT;
-}
-
 int init_node(ast_tree* ast, int pos, ast_nodetype type) {
 	validate_size(ast, 1);
 	ast->nodes[ast->count].type = type;
@@ -43,127 +37,80 @@ int init_node(ast_tree* ast, int pos, ast_nodetype type) {
 	return ast->count-1;
 }
 
-int parse_primary_expr(ast_tree* ast, token** tokens, int* pos) {
-	printf("primary_expr: %d\n", *pos);
-	token* token = tokens[*pos];
-
-	switch (token->type) { // TODO: add indentifier and parenthesis parsing
-		case TOKEN_NUMBER: {
-			   return init_node(ast, (*pos)++, NODE_NUMBER);
-			}
-		default:
-			fprintf(stderr, "ERROR: token %c is not a primary expression\n", token->start[0]);
-			return -1;
-	
-	}
-
-	return -1;
-}
-
-int parse_mul_expr(ast_tree* ast, token** tokens, int* pos) {
-	int l = parse_primary_expr(ast, tokens, pos); // call func with lower order of op
-	if (l < 0) return -1;
-
-	while (tokens[*pos]->type == TOKEN_STAR || tokens[*pos]->type == TOKEN_SLASH) {
-		int op = init_node(ast, (*pos)++, NODE_BINARY_OP);
-		int r = parse_primary_expr(ast, tokens, pos);
-		if (r < 0) return -1;
-
-		ast->nodes[op].data.two_nodes.node_l = l;
-		ast->nodes[op].data.two_nodes.node_r = r;
-
-		l = op;
-	}
-	return l;
-}
-
-int parse_add_expr(ast_tree* ast, token** tokens, int* pos) {
-	int l = parse_mul_expr(ast, tokens, pos); // call func with lower order of op
-	if (l < 0) return l;
-
-	while (tokens[*pos]->type == TOKEN_PLUS || tokens[*pos]->type == TOKEN_MINUS) {
-		int op = init_node(ast, (*pos)++, NODE_BINARY_OP);
-		int r = parse_mul_expr(ast, tokens, pos);
-		if (r < 0) return r;
-
-		ast->nodes[op].data.two_nodes.node_l = l;
-		ast->nodes[op].data.two_nodes.node_r = r;
-
-		return op;
-	}
-	return l;
-}
-
-int parse_expression(ast_tree* ast, token** tokens, int* pos) {
-	return parse_add_expr(ast, tokens, pos);
-}
-
-int parse_scope(ast_tree* ast, token** tokens, int* pos) {
-	return 0;
-}
-
-void parse(ast_tree* ast, token** tokens) {
-	int i = 0;
-
-	int index = parse_expression(ast, tokens, &i);
-	if (index < 0) {
-		fprintf(stderr, "BIG ERROR MODE\n");
-		exit(EXIT_FAILURE);
-	}
-	printf("parse success\n");
-
-	ast->nodes[ast->root_index].data.node_array.count = 1;
-	ast->nodes[ast->root_index].data.node_array.ast_indices[0] = index;
-}
-
-ast_tree* ast_create(token** tokens, int token_count) {
+ast_tree* ast_create() {
 	ast_tree* ast = malloc(sizeof(ast_tree));
 	ast->count = 1;
 	ast->allocated = 1;
 	ast->root_index = 0;
 	ast->nodes = malloc(sizeof(ast_node));
 	init_root(&ast->nodes[0]);
-	parse(ast, tokens);
 
 	return ast;
 }
 
-static void print_tab(int count) {
-	for (int i = 0; i < count; i++) {
-		printf("  ");
-	}
-}
+static void ast_node_print_rec(
+    ast_tree* ast,
+    int index,
+    token** tokens,
+    const char* prefix,
+	char is_last
+) {
+    ast_node node = ast->nodes[index];
 
-static void ast_node_print(ast_tree* ast, int index, token** tokens, int tab) {
-	ast_node node = ast->nodes[index];
-	if (node.type == NODE_ROOT) {
-		printf("ROOT\n");
-	}
-	else {
-		token* token = tokens[node.token_index];
-		
-		print_tab(tab);
-		for (int i = 0; i < token->length; i++) {
-			printf("%c", token->start[i]);
-		}
-		printf("\n");
-	}
+    // Print prefix and connector
+    if (node.type == NODE_ROOT) {
+        printf("ROOT\n");
+    } else {
+        printf("%s", prefix);
 
-	if (node_has_two(node)) {
-		int a = node.data.two_nodes.node_l;
-		int b = node.data.two_nodes.node_r;
+        if (is_last)
+            printf("└── ");
+        else
+            printf("├── ");
 
-		ast_node_print(ast, a, tokens, tab + 1);
-		ast_node_print(ast, b, tokens, tab + 1);
-	}
-	else {
-		for (int i = 0; i < node.data.node_array.count; i++) {
-			int ind = node.data.node_array.ast_indices[i];
-			ast_node_print(ast, ind, tokens, tab + 1);
-		}
-	}
+        // Print token text
+        token* t = tokens[node.token_index];
+        fwrite(t->start, 1, t->length, stdout);
+        printf("\n");
+    }
+
+    // Determine children
+    int children[64];
+    int child_count = 0;
+
+    if (node_has_two(node)) {
+        children[0] = node.data.two_nodes.node_l;
+        children[1] = node.data.two_nodes.node_r;
+        child_count = 2;
+    } else {
+        for (int i = 0; i < node.data.node_array.count; i++) {
+            children[child_count++] = node.data.node_array.ast_indices[i];
+        }
+    }
+
+    // Build next prefix
+    char next_prefix[256];
+    strcpy(next_prefix, prefix);
+
+    if (node.type != NODE_ROOT) {
+        if (is_last)
+            strcat(next_prefix, "    "); // no vertical line
+        else
+            strcat(next_prefix, "│   "); // vertical continuation
+    }
+
+    // Recurse into children
+    for (int i = 0; i < child_count; i++) {
+        ast_node_print_rec(
+            ast,
+            children[i],
+            tokens,
+            next_prefix,
+            i == child_count - 1
+        );
+    }
 }
 
 void ast_print(ast_tree* ast, token** tokens) {
-	ast_node_print(ast, ast->root_index, tokens, 0);
+    ast_node_print_rec(ast, ast->root_index, tokens, "", 1);
 }
