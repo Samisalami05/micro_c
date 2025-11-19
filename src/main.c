@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ast.h"
 #include "lexer.h"
 
 char* readFile(FILE* fp) {
@@ -37,10 +38,10 @@ int main(int argc, char* argv[]) {
 
 	char* buffer = readFile(fp);
 	
-	int tokenCount;
-	token** tokens = lex(buffer, &tokenCount);
+	int token_count;
+	token** tokens = lex(buffer, &token_count);
 
-	for (int i = 0; i < tokenCount; i++) {
+	for (int i = 0; i < token_count; i++) {
 		token* t = tokens[i];
 
 		// Print token
@@ -50,5 +51,7 @@ int main(int argc, char* argv[]) {
 		}
 		printf("\n");
 	}
+
+	ast_tree* ast = ast_create(tokens, token_count);
 	return 0;
 }
