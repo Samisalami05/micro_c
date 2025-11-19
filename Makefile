@@ -6,10 +6,10 @@ BUILDDIR := build
 SRCS := $(shell find $(SOURCEDIR) -name '*.c')
 OBJS := $(patsubst $(SOURCEDIR)/%.c,$(BUILDDIR)/%.o,$(SRCS))
 
-CFLAGS := -Wall
+CFLAGS := -Wall -I$(SOURCEDIR) -ggdb
 
 $(NAME): $(OBJS)
-	$(CC) $(OBJS) -o $(NAME)
+	$(CC) $(OBJS) $(CFLAGS) -o $(NAME)
 
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
 	@mkdir -p $(dir $@)
@@ -17,8 +17,8 @@ $(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILDDIR)/*.d
-	rm -rf $(BUILDDIR)/*.o
 	rm $(NAME)
+	rm -rf $(BUILDDIR)
+	mkdir $(BUILDDIR)
 
 -include $(OBJS:.o=.d)

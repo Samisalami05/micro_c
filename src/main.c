@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ast.h"
-#include "lexer.h"
+#include <compiler/ast.h>
+#include <compiler/lexer.h>
 
 char* readFile(FILE* fp) {
 	fseek(fp, 0, SEEK_END);
@@ -53,5 +53,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	ast_tree* ast = ast_create(tokens, token_count);
+	ast_print(ast, tokens);
 	return 0;
 }

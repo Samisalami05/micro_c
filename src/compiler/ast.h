@@ -1,12 +1,12 @@
 #ifndef AST_H
 #define AST_H
 
-#include "lexer.h"
+#include <compiler/lexer.h>
 
 typedef enum ast_nodetype {
 	NODE_ROOT,
 	NODE_INDENTIFIER,
-	NODE_CONSTANT,
+	NODE_NUMBER,
 	NODE_STRING_LITERAL,
 	NODE_EXPRESSION,
 
@@ -14,7 +14,7 @@ typedef enum ast_nodetype {
 	NODE_BLOCK, // Internal block of the function
 	
 	NODE_RETURN,
-	BINARY_OP,
+	NODE_BINARY_OP,
 } ast_nodetype;
 
 typedef struct ast_node {
@@ -41,5 +41,7 @@ typedef struct {
 } ast_tree;
 
 ast_tree* ast_create(token** tokens, int token_count);
+
+void ast_print(ast_tree* ast, token** tokens);
 
 #endif

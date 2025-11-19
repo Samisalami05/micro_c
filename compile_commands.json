@@ -1,0 +1,44 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Isrc",
+      "-o",
+      "build/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/samisalami/Projects/micro_c",
+    "file": "/home/samisalami/Projects/micro_c/src/main.c",
+    "output": "/home/samisalami/Projects/micro_c/build/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Isrc",
+      "-o",
+      "build/ast.o",
+      "src/ast.c"
+    ],
+    "directory": "/home/samisalami/Projects/micro_c",
+    "file": "/home/samisalami/Projects/micro_c/src/ast.c",
+    "output": "/home/samisalami/Projects/micro_c/build/ast.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Isrc",
+      "-o",
+      "build/lexer.o",
+      "src/lexer.c"
+    ],
+    "directory": "/home/samisalami/Projects/micro_c",
+    "file": "/home/samisalami/Projects/micro_c/src/lexer.c",
+    "output": "/home/samisalami/Projects/micro_c/build/lexer.o"
+  }
+]
