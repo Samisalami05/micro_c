@@ -72,11 +72,35 @@ token* string(char* buffer, int* i) {
 	*i += 1;
 	printf("TOKEN_STRING: length = %d, start = %c\n", length, buffer[start]);
 	return create_token(TOKEN_STRING, &buffer[start], length);
-}		
+}
+
+void skip_comment(char* buffer, int* i) {
+	while (buffer[*i] == '/' && buffer[*i + 1] == '/') {
+		char c;
+		while ((c = buffer[*i]) != '\n' && c != '\0') {
+			*i += 1;
+		}
+		if (buffer[*i] == '\n') {
+			*i += 1;
+		}
+		skip_whitespace(buffer, i);
+	}
+
+	while (buffer[*i] == '/' && buffer[*i + 1] == '*') {
+		*i += 1;
+		while (buffer[*i] != '\0' && !(buffer[*i] == '*' && buffer[*i + 1] == '/')) {
+			*i += 1;
+		}
+		*i += 2;
+		skip_whitespace(buffer, i);
+	}
+}
 
 token* scan_token(char* buffer, int* i) {
-	char c = buffer[*i];
+	skip_whitespace(buffer, i);
+	skip_comment(buffer, i);
 
+	char c = buffer[*i];
 	if (c == '\0') return create_token(TOKEN_EOF, &buffer[*i], 1);
 
 	*i += 1;
@@ -117,8 +141,6 @@ token** lex(char* buffer, int* tokenCount) {
 
 	int i = 0;
 	while (buffer[i] != '\0') {
-		skip_whitespace(buffer, &i);
-
 		if (allocated <= *tokenCount) {
 			tokens = realloc(tokens, (*tokenCount + ALLOCATION_SIZE) * sizeof(token*));
 			allocated += ALLOCATION_SIZE;

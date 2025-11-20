@@ -33,22 +33,18 @@ static int parse_primary_expr(ast_tree* ast, token** tokens, int* pos) {
 
 static int parse_parenthesis(ast_tree* ast, token** tokens, int* pos) {
 	token* token = tokens[*pos];
-	if (token->type == TOKEN_PARENTHESIS_OPEN) {
-		(*pos)++;
-		int index = parse_expression(ast, tokens, pos);
+	// expected that token->type == TOKEN_PARENTHESIS_OPEN
+	(*pos)++;
+	int index = parse_expression(ast, tokens, pos);
 
-		if (tokens[*pos]->type != TOKEN_PARENTHESIS_CLOSE) {
-			fprintf(stderr, "ERROR: No closing parenthesis on expression\n");
-			return -1;
-		}
-
-		(*pos)++;
-
-		return index;
+	if (tokens[*pos]->type != TOKEN_PARENTHESIS_CLOSE) {
+		fprintf(stderr, "ERROR: No closing parenthesis on expression\n");
+		return -1;
 	}
-	else {
-		return parse_primary_expr(ast, tokens, pos);
-	}
+
+	(*pos)++;
+
+	return index;
 }
 
 static int parse_mul_expr(ast_tree* ast, token** tokens, int* pos) {
@@ -80,7 +76,7 @@ static int parse_add_expr(ast_tree* ast, token** tokens, int* pos) {
 		ast->nodes[op].data.two_nodes.node_l = l;
 		ast->nodes[op].data.two_nodes.node_r = r;
 
-		return op;
+		l = op;
 	}
 	return l;
 }
