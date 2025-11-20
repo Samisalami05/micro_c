@@ -117,7 +117,7 @@ static int parse_block(ast_tree* ast, token** tokens, int* pos) {
 		int block = init_node(ast, *pos, NODE_BLOCK);
 		ast_node* block_node = &ast->nodes[block];
 
-		block_node->data.node_array.count = 3; // Why is this the max number of elements ????? (maybe something to do with it being a union)
+		block_node->data.node_array.count = 3;
 		block_node->data.node_array.ast_indices = NULL;
 		
 		int i = 0;

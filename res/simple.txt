@@ -1,16 +1,9 @@
-3 + 4 / (5 + 6) * 7
+{
+	int a = 5 + 3 / 4 + 5 * 4
+	int b = 0
+	int c = 3
+}
 
-// wow o daw d dwa daw d
-// wod wad 
-// wadawd 
-// WPDw oajJD pwW PA
-
-/*
-*/
-
-// wow
-/*
-*/
 
 fn main (a: u32) {
 	return 2;

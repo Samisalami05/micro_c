@@ -74,31 +74,41 @@ token* string(char* buffer, int* i) {
 	return create_token(TOKEN_STRING, &buffer[start], length);
 }
 
-void skip_comment(char* buffer, int* i) {
-	while (buffer[*i] == '/' && buffer[*i + 1] == '/') {
-		char c;
-		while ((c = buffer[*i]) != '\n' && c != '\0') {
-			*i += 1;
-		}
-		if (buffer[*i] == '\n') {
-			*i += 1;
-		}
-		skip_whitespace(buffer, i);
-	}
+char is_comment(char* buffer, int* i) {
+	return buffer[*i] == '/' && buffer[*i + 1] == '/';
+}
 
-	while (buffer[*i] == '/' && buffer[*i + 1] == '*') {
-		*i += 1;
-		while (buffer[*i] != '\0' && !(buffer[*i] == '*' && buffer[*i + 1] == '/')) {
-			*i += 1;
+char is_comment_block(char* buffer, int* i) {
+	return buffer[*i] == '/' && buffer[*i + 1] == '*';
+}
+
+void skip_comments(char* buffer, int* i) {
+	while (is_comment(buffer, i) || is_comment_block(buffer, i)) {
+
+		if (is_comment(buffer, i)) {
+			while (buffer[*i] != '\n' && buffer[*i] != '\0') {
+				*i += 1;
+			}
+			if (buffer[*i] == '\n') {
+				*i += 1;
+			}
+			skip_whitespace(buffer, i);
 		}
-		*i += 2;
-		skip_whitespace(buffer, i);
+
+		if (is_comment_block(buffer, i)) {
+			*i += 1;
+			while (buffer[*i] != '\0' && !(buffer[*i] == '*' && buffer[*i + 1] == '/')) {
+				*i += 1;
+			}
+			*i += 2;
+			skip_whitespace(buffer, i);
+		}
 	}
 }
 
 token* scan_token(char* buffer, int* i) {
 	skip_whitespace(buffer, i);
-	skip_comment(buffer, i);
+	skip_comments(buffer, i);
 
 	char c = buffer[*i];
 	if (c == '\0') return create_token(TOKEN_EOF, &buffer[*i], 1);

@@ -11,7 +11,7 @@ static char node_has_two(ast_node node);
 static void validate_size(ast_tree* ast, int num);
 
 static char node_has_two(ast_node node) {
-	return node.type == NODE_BINARY_OP;
+	return node.type == NODE_BINARY_OP || node.type == NODE_ASSIGNMENT_OP;
 }
 
 static void init_root(ast_node* root) {
@@ -27,10 +27,10 @@ void validate_size(ast_tree* ast, int num) {
 	}
 }
 
-int init_node(ast_tree* ast, int pos, ast_nodetype type) {
+int init_node(ast_tree* ast, int t_pos, ast_nodetype type) {
 	validate_size(ast, 1);
 	ast->nodes[ast->count].type = type;
-	ast->nodes[ast->count].token_index = pos;
+	ast->nodes[ast->count].token_index = t_pos;
 	ast->nodes[ast->count].data.node_array.count = 0;
 	ast->count++;
 	
