@@ -1,9 +1,10 @@
-int wow(int a, int b)
-{
+int func(int a, int b) {
 	int i = 0
-	{
-		char wow = 0
-	}
+	int a = i + 5 * 3
+}
+
+char func() {
+	int a = 0
 }
 
 /*

@@ -13,13 +13,18 @@ static void validate_size(ast_tree* ast, int num);
 
 
 static char node_has_two(ast_node node) {
-	return node.type == NODE_BINARY_OP || node.type == NODE_ASSIGNMENT_OP;
+	return node.type == NODE_BINARY_OP || node.type == NODE_ASSIGNMENT_OP ||
+		node.type == NODE_VAR_DECL;
 }
 
 static char* node_to_str(ast_nodetype type) {
 	switch (type) {
 		case NODE_STATEMENT: return "Statement";
 		case NODE_BLOCK: return "Block";
+		case NODE_VAR_DECL: return "Variable";
+		case NODE_FUNC: return "Function";
+		case NODE_PARAMETER: return "Parameter";
+		case NODE_PARAMETERS: return "Parameters";
 		default: return NULL;
 	}
 }
@@ -43,6 +48,19 @@ int init_node(ast_tree* ast, ast_node node_data) {
 	ast->count++;
 	
 	return ast->count-1;
+}
+
+void node_append(ast_node* node, int other) {
+	// Implement this
+	node->data.node_array.count++;
+	node->data.node_array.ast_indices = realloc(node->data.node_array.ast_indices, sizeof(int) * node->data.node_array.count);
+	node->data.node_array.ast_indices[node->data.node_array.count - 1] = other;
+}
+
+void node_append_index(ast_tree* ast, int node, int other) {
+	ast->nodes[node].data.node_array.count++;
+	ast->nodes[node].data.node_array.ast_indices = realloc(ast->nodes[node].data.node_array.ast_indices, sizeof(int) * ast->nodes[node].data.node_array.count);
+	ast->nodes[node].data.node_array.ast_indices[ast->nodes[node].data.node_array.count - 1] = other;
 }
 
 ast_tree* ast_create() {

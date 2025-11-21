@@ -10,7 +10,11 @@ typedef enum ast_nodetype {
 	NODE_STRING_LITERAL,
 	NODE_EXPRESSION,
 	NODE_STATEMENT,
+	NODE_FUNC,
+	NODE_PARAMETER,
+	NODE_PARAMETERS,
 
+	NODE_VAR_DECL,
 	NODE_FUNC_DECL,
 	NODE_BLOCK, // Internal block of the function
 	
@@ -44,6 +48,10 @@ typedef struct {
 } ast_tree;
 
 int init_node(ast_tree* ast, ast_node node_data);
+
+void node_append(ast_node* node, int other);
+
+void node_append_index(ast_tree* ast, int node, int other);
 
 ast_tree* ast_create();
 

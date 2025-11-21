@@ -174,6 +174,28 @@ static int parse_block(ast_tree* ast, token** tokens, int* pos) {
 	}
 }
 
+static int parse_var_decl(ast_tree* ast, token** tokens, int* pos) {
+	int datatype = parse_primary_expr(ast, tokens, pos);
+	if (ast->nodes[datatype].type != NODE_IDENTIFIER) {
+		LOG_ERR("Expected identifier as datatype in variable declaration");
+		return -1;
+	}
+	int name = parse_primary_expr(ast, tokens, pos);
+	if (ast->nodes[name].type != NODE_IDENTIFIER) {
+		LOG_ERR("Expected identifier as variable name\n");
+		return -1;
+	}
+
+	ast_node node = {
+		.type = NODE_VAR_DECL,
+		.token_index = *pos,
+	};
+
+	node.data.two_nodes.node_l = datatype;
+	node.data.two_nodes.node_r = name;
+
+	return init_node(ast, node);
+}
 
 static int parse_parameter_list(ast_tree* ast, token** tokens, int* pos) {
 	if (tokens[*pos]->type != TOKEN_PARENTHESIS_OPEN) {
@@ -181,9 +203,18 @@ static int parse_parameter_list(ast_tree* ast, token** tokens, int* pos) {
 		return -1;
 	}
 	*pos += 1;
+
+	ast_node node = {
+		.type = NODE_PARAMETERS,
+		.token_index = *pos,
+		.data.node_array.count = 0,
+	};
+
 	while (tokens[*pos]->type != TOKEN_PARENTHESIS_CLOSE) {
-		int datatype = parse_primary_expr(ast, tokens, pos);
-		int name = parse_primary_expr(ast, tokens, pos);
+		int var = parse_var_decl(ast, tokens, pos);
+		if (var == -1) return -1;
+
+		node_append(&node, var);
 
 		if (tokens[*pos]->type != TOKEN_COMMA) {
 			break;
@@ -194,36 +225,64 @@ static int parse_parameter_list(ast_tree* ast, token** tokens, int* pos) {
 		LOG_ERR("Expected closing parenthesis after parameter list\n");
 		return -1;
 	}
+	*pos += 1;
 
-	return 5;
+	return init_node(ast, node);
 }
 
 static int parse_function(ast_tree* ast, token** tokens, int* pos) {
 	int front = parse_primary_expr(ast, tokens, pos);
+	if (front == -1) return -1;
 	if (ast->nodes[front].type != NODE_IDENTIFIER) {
 		LOG_ERR("Expected identifier in front of function name\n");
 		return -1;
 	}
 	int name = parse_primary_expr(ast, tokens, pos);
+	if (name == -1) return -1;
 	if (ast->nodes[name].type != NODE_IDENTIFIER) {
 		LOG_ERR("Expected function name after datatype\n");
 		return -1;
 	}
 	int parameters = parse_parameter_list(ast, tokens, pos);
-	return front;
+	if (parameters == -1) return -1;
+	int block = parse_block(ast, tokens, pos);
+	if (block == -1) return -1;
+
+	ast_node node = {
+		.type = NODE_FUNC,
+		.token_index = *pos,
+		.data.node_array.count = 0,
+	};
+
+	node_append(&node, front);
+	node_append(&node, name);
+	node_append(&node, parameters);
+	node_append(&node, block);
+
+	return init_node(ast, node);
 }
 
 void parse(ast_tree* ast, token** tokens) {
 	int i = 0;
-	int index = parse_function(ast, tokens, &i);
-	
-	if (index < 0) {
-		LOG_ERR("Error detected, exiting\n");
-		exit(EXIT_FAILURE);
-	}
-	LOG_MSG("parse success\n");
 
-	ast->nodes[ast->root_index].data.node_array.count = 1;
-	ast->nodes[ast->root_index].data.node_array.ast_indices = malloc(1*sizeof(int));
-	ast->nodes[ast->root_index].data.node_array.ast_indices[0] = index;
+	while (tokens[i]->type != TOKEN_EOF) {
+		int index = -1;
+		switch(tokens[i]->type) {
+			case TOKEN_IDENTIFIER:
+				index = parse_function(ast, tokens, &i);
+				break;
+			default:
+				LOG_ERR("Unknown token in file statement\n");
+		}
+
+		if (index < 0) {
+			LOG_ERR("Error detected, exiting\n");
+			exit(EXIT_FAILURE);
+		}
+		
+		int root = ast->root_index;
+		node_append_index(ast, root, index);
+	}
+	
+	LOG_MSG("parse success\n");
 }
