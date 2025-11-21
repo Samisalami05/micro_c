@@ -1,8 +1,6 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <stdio.h>
-
 typedef enum TokenType {
 	TOKEN_ERROR,
 	TOKEN_NUMBER,
@@ -37,4 +35,7 @@ typedef struct token {
 
 token** lex(char* buffer, int* tokenCount);
 
+void tokens_print(token** tokens, int token_count);
+
+void token_print(token* token);
 #endif

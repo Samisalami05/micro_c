@@ -1,6 +1,7 @@
 #include "compiler/parser.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <logger.h>
 
 #include <compiler/ast.h>
 #include <compiler/lexer.h>
@@ -42,19 +43,11 @@ int main(int argc, char* argv[]) {
 	int token_count;
 	token** tokens = lex(buffer, &token_count);
 
-	for (int i = 0; i < token_count; i++) {
-		token* t = tokens[i];
-
-		// Print token
-		printf("TOKEN: length = %d, start = ", t->length);
-		for (int j = 0; j < t->length; j++) {
-			printf("%c", t->start[j]);
-		}
-		printf("\n");
-	}
+	tokens_print(tokens, token_count);
 
 	ast_tree* ast = ast_create();
 	parse(ast, tokens);
 	ast_print(ast, tokens);
+	
 	return 0;
 }

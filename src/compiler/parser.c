@@ -1,6 +1,7 @@
-#include "ast.h"
-#include "lexer.h"
+#include <compiler/ast.h>
+#include <compiler/lexer.h>
 #include <compiler/parser.h>
+#include <logger.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -12,7 +13,6 @@ static int parse_mul_expr(ast_tree* ast, token** tokens, int* pos);
 static int parse_block(ast_tree* ast, token** tokens, int* pos);
 
 static int parse_primary_expr(ast_tree* ast, token** tokens, int* pos) {
-	printf("primary_expr: %d\n", *pos);
 	token* token = tokens[*pos];
 	ast_nodetype type;
 
@@ -25,9 +25,8 @@ static int parse_primary_expr(ast_tree* ast, token** tokens, int* pos) {
 			break;
 		case TOKEN_PARENTHESIS_OPEN: return parse_parenthesis(ast, tokens, pos);
 		default:
-			fprintf(stderr, "ERROR: token %c is not a primary expression\n", token->start[0]);
+			LOG_ERR("missing primary expression at token index %d\n", *pos);
 			return -1;
-	
 	}
 
 	ast_node node = {
@@ -45,7 +44,7 @@ static int parse_parenthesis(ast_tree* ast, token** tokens, int* pos) {
 	int index = parse_expression(ast, tokens, pos);
 
 	if (tokens[*pos]->type != TOKEN_PARENTHESIS_CLOSE) {
-		fprintf(stderr, "ERROR: No closing parenthesis on expression\n");
+		LOG_ERR("ERROR: No closing parenthesis on expression\n");
 		return -1;
 	}
 
@@ -125,17 +124,16 @@ static int parse_expression(ast_tree* ast, token** tokens, int* pos) {
 }
 
 static int parse_statement(ast_tree* ast, token** tokens, int* pos) {
-	printf("parse_statement\n");
 	ast_node node = {
 		.token_index = *pos,
 		.type = NODE_STATEMENT,
 		.data.node_array.count = 2,
 		.data.node_array.ast_indices = malloc(sizeof(int) * 2),
 	};
-	printf("primary_expr from stmt: %d. %d\n", *pos, tokens[*pos]->type);
+
 	node.data.node_array.ast_indices[0] = parse_primary_expr(ast, tokens, pos);
 	if (node.data.node_array.ast_indices[0] < 0) return -1;
-	printf("parsing: %d. %d\n", *pos, tokens[*pos]->type);
+	
 	node.data.node_array.ast_indices[1] = parse_expression(ast, tokens, pos);
 	if (node.data.node_array.ast_indices[1] < 0) return -1;
 	int statement = init_node(ast, node);
@@ -160,7 +158,11 @@ static int parse_block(ast_tree* ast, token** tokens, int* pos) {
 		}
 
 		block_node.data.node_array.count = i;
-		printf("count: %d\n", i); // TODO: fix this not updating
+
+		if (tokens[*pos]->type != TOKEN_BRACE_CLOSE) {
+			LOG_ERR("No closing bracket found for block\n");
+			return -1;
+		}
 
 		*pos += 1; // Skip close brace
 	
@@ -172,15 +174,54 @@ static int parse_block(ast_tree* ast, token** tokens, int* pos) {
 	}
 }
 
+
+static int parse_parameter_list(ast_tree* ast, token** tokens, int* pos) {
+	if (tokens[*pos]->type != TOKEN_PARENTHESIS_OPEN) {
+		LOG_ERR("Expected parameter list after function name\n");
+		return -1;
+	}
+	*pos += 1;
+	while (tokens[*pos]->type != TOKEN_PARENTHESIS_CLOSE) {
+		int datatype = parse_primary_expr(ast, tokens, pos);
+		int name = parse_primary_expr(ast, tokens, pos);
+
+		if (tokens[*pos]->type != TOKEN_COMMA) {
+			break;
+		}
+		*pos += 1;
+	}
+	if (tokens[*pos]->type != TOKEN_PARENTHESIS_CLOSE) {
+		LOG_ERR("Expected closing parenthesis after parameter list\n");
+		return -1;
+	}
+
+	return 5;
+}
+
+static int parse_function(ast_tree* ast, token** tokens, int* pos) {
+	int front = parse_primary_expr(ast, tokens, pos);
+	if (ast->nodes[front].type != NODE_IDENTIFIER) {
+		LOG_ERR("Expected identifier in front of function name\n");
+		return -1;
+	}
+	int name = parse_primary_expr(ast, tokens, pos);
+	if (ast->nodes[name].type != NODE_IDENTIFIER) {
+		LOG_ERR("Expected function name after datatype\n");
+		return -1;
+	}
+	int parameters = parse_parameter_list(ast, tokens, pos);
+	return front;
+}
+
 void parse(ast_tree* ast, token** tokens) {
 	int i = 0;
-	int index = parse_block(ast, tokens, &i);
+	int index = parse_function(ast, tokens, &i);
 	
 	if (index < 0) {
-		fprintf(stderr, "Error detected, exiting\n");
+		LOG_ERR("Error detected, exiting\n");
 		exit(EXIT_FAILURE);
 	}
-	printf("parse success\n");
+	LOG_MSG("parse success\n");
 
 	ast->nodes[ast->root_index].data.node_array.count = 1;
 	ast->nodes[ast->root_index].data.node_array.ast_indices = malloc(1*sizeof(int));

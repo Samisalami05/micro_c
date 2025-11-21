@@ -1,4 +1,5 @@
-#include "lexer.h"
+#include <compiler/lexer.h>
+#include <logger.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,7 +140,7 @@ token* scan_token(char* buffer, int* i) {
 		case '"': return string(buffer, i);
 	}
 
-	printf("Unexpected character: %c\n", c);
+	LOG_WARNING("Unexpected character: %c\n", c);
 	return create_token_err("Unexpected character found");
 }
 
@@ -161,8 +162,26 @@ token** lex(char* buffer, int* tokenCount) {
 		*tokenCount += 1;
 
 		if (t->type == TOKEN_ERROR) {
-			fprintf(stderr, "LEXER ERROR: %s\n", t->start);
+			LOG_ERR("%s\n", t->start);
+			return tokens;
 		}
 	}
 	return tokens;
+}
+
+void tokens_print(token** tokens, int token_count) {
+	for (int i = 0; i < token_count; i++) {
+		token* t = tokens[i];
+		
+		token_print(t);
+	}
+	printf("\n");
+}
+
+void token_print(token* token) {
+	LOG_HEADER("TOKEN", "length = %d: ", token->length);
+	for (int j = 0; j < token->length; j++) {
+		printf("%c", token->start[j]);
+	}
+	printf("\n");
 }

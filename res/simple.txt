@@ -1,9 +1,13 @@
+int wow(int a, int b)
 {
-	int a = 0
-	int b = 1 + a
+	int i = 0
+	{
+		char wow = 0
+	}
 }
 
-
-fn main (): i32 {
-	return 2;
-}
+/*
+ * fn main(): i32 {
+ *	  return 2;
+ * }
+ */
