@@ -14,21 +14,29 @@ static int parse_block(ast_tree* ast, token** tokens, int* pos);
 static int parse_primary_expr(ast_tree* ast, token** tokens, int* pos) {
 	printf("primary_expr: %d\n", *pos);
 	token* token = tokens[*pos];
+	ast_nodetype type;
 
 	switch (token->type) {
 		case TOKEN_NUMBER:
-			return init_node(ast, (*pos)++, NODE_NUMBER);
+			type = NODE_NUMBER;
+			break;
 		case TOKEN_IDENTIFIER:
-			return init_node(ast, (*pos)++, NODE_IDENTIFIER);
-		case TOKEN_PARENTHESIS_OPEN:
-			return parse_parenthesis(ast, tokens, pos);
+			type = NODE_IDENTIFIER;
+			break;
+		case TOKEN_PARENTHESIS_OPEN: return parse_parenthesis(ast, tokens, pos);
 		default:
 			fprintf(stderr, "ERROR: token %c is not a primary expression\n", token->start[0]);
 			return -1;
 	
 	}
 
-	return -1;
+	ast_node node = {
+		.type = type,
+		.token_index = (*pos)++,
+		.data.node_array.count = 0,
+	};
+
+	return init_node(ast, node);
 }
 
 static int parse_parenthesis(ast_tree* ast, token** tokens, int* pos) {
@@ -51,7 +59,12 @@ static int parse_mul_expr(ast_tree* ast, token** tokens, int* pos) {
 	if (l < 0) return -1;
 
 	while (tokens[*pos]->type == TOKEN_STAR || tokens[*pos]->type == TOKEN_SLASH) {
-		int op = init_node(ast, (*pos)++, NODE_BINARY_OP);
+		ast_node node = {
+			.type = NODE_BINARY_OP,
+			.token_index = (*pos)++,
+		};
+
+		int op = init_node(ast, node);
 		int r = parse_primary_expr(ast, tokens, pos);
 		if (r < 0) return -1;
 
@@ -68,7 +81,12 @@ static int parse_add_expr(ast_tree* ast, token** tokens, int* pos) {
 	if (l < 0) return l;
 
 	while (tokens[*pos]->type == TOKEN_PLUS || tokens[*pos]->type == TOKEN_MINUS) {
-		int op = init_node(ast, (*pos)++, NODE_BINARY_OP);
+		ast_node node = {
+			.type = NODE_BINARY_OP,
+			.token_index = (*pos)++,
+		};
+
+		int op = init_node(ast, node);
 		int r = parse_mul_expr(ast, tokens, pos);
 		if (r < 0) return r;
 
@@ -85,7 +103,12 @@ static int parse_assignment_expr(ast_tree* ast, token** tokens, int* pos) {
 	if (l < 0) return l;
 
 	while (tokens[*pos]->type == TOKEN_EQUALS) {
-		int op = init_node(ast, (*pos)++, NODE_ASSIGNMENT_OP);
+		ast_node node = {
+			.type = NODE_ASSIGNMENT_OP,
+			.token_index = (*pos)++,
+		};
+
+		int op = init_node(ast, node);
 		int r = parse_add_expr(ast, tokens, pos);
 		if (r < 0) return r;
 
@@ -102,35 +125,46 @@ static int parse_expression(ast_tree* ast, token** tokens, int* pos) {
 }
 
 static int parse_statement(ast_tree* ast, token** tokens, int* pos) {
-	int statement = init_node(ast, *pos, NODE_STATEMENT);
-	ast_node* node = &ast->nodes[statement];
-	node->data.node_array.count = 2;
-	node->data.node_array.ast_indices = malloc(sizeof(int) * 2);
-	node->data.node_array.ast_indices[0] = parse_primary_expr(ast, tokens, pos);
-	node->data.node_array.ast_indices[1] = parse_expression(ast, tokens, pos);
+	printf("parse_statement\n");
+	ast_node node = {
+		.token_index = *pos,
+		.type = NODE_STATEMENT,
+		.data.node_array.count = 2,
+		.data.node_array.ast_indices = malloc(sizeof(int) * 2),
+	};
+	printf("primary_expr from stmt: %d. %d\n", *pos, tokens[*pos]->type);
+	node.data.node_array.ast_indices[0] = parse_primary_expr(ast, tokens, pos);
+	if (node.data.node_array.ast_indices[0] < 0) return -1;
+	printf("parsing: %d. %d\n", *pos, tokens[*pos]->type);
+	node.data.node_array.ast_indices[1] = parse_expression(ast, tokens, pos);
+	if (node.data.node_array.ast_indices[1] < 0) return -1;
+	int statement = init_node(ast, node);
 	return statement;
 }
 
 static int parse_block(ast_tree* ast, token** tokens, int* pos) {
 	if (tokens[*pos]->type == TOKEN_BRACE_OPEN) {
-		*pos += 1; // Skip open brace
-		int block = init_node(ast, *pos, NODE_BLOCK);
-		ast_node* block_node = &ast->nodes[block];
-
-		block_node->data.node_array.count = 3; // Why is this the max number of elements ????? (maybe something to do with it being a union)
-		block_node->data.node_array.ast_indices = NULL;
+		ast_node block_node = {
+			.type = NODE_BLOCK,
+			.token_index = (*pos)++,
+			.data.node_array.count = 1, // Why is this the max number of elements ????? (maybe something to do with it being a union)
+			.data.node_array.ast_indices = NULL,
+		};
 		
 		int i = 0;
 		while (tokens[*pos]->type != TOKEN_EOF && tokens[*pos]->type != TOKEN_BRACE_CLOSE) {
-			block_node->data.node_array.ast_indices = realloc(block_node->data.node_array.ast_indices, sizeof(int) * (i + 1));
-			block_node->data.node_array.ast_indices[i] = parse_block(ast, tokens, pos);
+			block_node.data.node_array.ast_indices = realloc(block_node.data.node_array.ast_indices, sizeof(int) * (i + 1));
+			block_node.data.node_array.ast_indices[i] = parse_block(ast, tokens, pos);
+			if (block_node.data.node_array.ast_indices[i] < 0) return -1;
 			i++;
 		}
 
-		block_node->data.node_array.count = i;
+		block_node.data.node_array.count = i;
 		printf("count: %d\n", i); // TODO: fix this not updating
 
 		*pos += 1; // Skip close brace
+	
+		int block = init_node(ast, block_node);
 		return block;
 	}
 	else {
@@ -140,8 +174,8 @@ static int parse_block(ast_tree* ast, token** tokens, int* pos) {
 
 void parse(ast_tree* ast, token** tokens) {
 	int i = 0;
-
 	int index = parse_block(ast, tokens, &i);
+	
 	if (index < 0) {
 		fprintf(stderr, "Error detected, exiting\n");
 		exit(EXIT_FAILURE);
@@ -149,5 +183,6 @@ void parse(ast_tree* ast, token** tokens) {
 	printf("parse success\n");
 
 	ast->nodes[ast->root_index].data.node_array.count = 1;
+	ast->nodes[ast->root_index].data.node_array.ast_indices = malloc(1*sizeof(int));
 	ast->nodes[ast->root_index].data.node_array.ast_indices[0] = index;
 }

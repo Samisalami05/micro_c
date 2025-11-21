@@ -8,10 +8,20 @@
 
 // Ast
 static char node_has_two(ast_node node);
+static char* node_to_str(ast_nodetype type);
 static void validate_size(ast_tree* ast, int num);
+
 
 static char node_has_two(ast_node node) {
 	return node.type == NODE_BINARY_OP || node.type == NODE_ASSIGNMENT_OP;
+}
+
+static char* node_to_str(ast_nodetype type) {
+	switch (type) {
+		case NODE_STATEMENT: return "Statement";
+		case NODE_BLOCK: return "Block";
+		default: return NULL;
+	}
 }
 
 static void init_root(ast_node* root) {
@@ -27,11 +37,9 @@ void validate_size(ast_tree* ast, int num) {
 	}
 }
 
-int init_node(ast_tree* ast, int t_pos, ast_nodetype type) {
+int init_node(ast_tree* ast, ast_node node_data) {
 	validate_size(ast, 1);
-	ast->nodes[ast->count].type = type;
-	ast->nodes[ast->count].token_index = t_pos;
-	ast->nodes[ast->count].data.node_array.count = 0;
+	ast->nodes[ast->count] = node_data;
 	ast->count++;
 	
 	return ast->count-1;
@@ -68,10 +76,18 @@ static void ast_node_print_rec(
         else
             printf("├── ");
 
-        // Print token text
-        token* t = tokens[node.token_index];
-        fwrite(t->start, 1, t->length, stdout);
-        printf("\n");
+		char* name = node_to_str(node.type);
+		if (name == NULL) {
+
+			// Print token text
+			token* t = tokens[node.token_index];
+			fwrite(t->start, 1, t->length, stdout);
+		}
+		else {
+			printf("%s", name);
+		}
+		printf("\n");
+	
     }
 
     // Determine children

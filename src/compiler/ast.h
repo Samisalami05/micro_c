@@ -43,7 +43,7 @@ typedef struct {
 	int root_index;
 } ast_tree;
 
-int init_node(ast_tree* ast, int t_pos, ast_nodetype type);
+int init_node(ast_tree* ast, ast_node node_data);
 
 ast_tree* ast_create();
 
