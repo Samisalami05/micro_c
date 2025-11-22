@@ -1,6 +1,8 @@
+int func(int a, int b);
+
 int func(int a, int b) {
 	int i = 0
-	int a = i + 5 * 3
+	int a = i + 5 * 3 + 17
 }
 
 char func() {

@@ -14,7 +14,7 @@ static void validate_size(ast_tree* ast, int num);
 
 static char node_has_two(ast_node node) {
 	return node.type == NODE_BINARY_OP || node.type == NODE_ASSIGNMENT_OP ||
-		node.type == NODE_VAR_DECL;
+		node.type == NODE_PARAMETER;
 }
 
 static char* node_to_str(ast_nodetype type) {
@@ -23,6 +23,7 @@ static char* node_to_str(ast_nodetype type) {
 		case NODE_BLOCK: return "Block";
 		case NODE_VAR_DECL: return "Variable";
 		case NODE_FUNC: return "Function";
+		case NODE_FUNC_DECL: return "Function Declaration";
 		case NODE_PARAMETER: return "Parameter";
 		case NODE_PARAMETERS: return "Parameters";
 		default: return NULL;

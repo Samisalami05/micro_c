@@ -6,13 +6,23 @@
 
 #define ALLOCATION_SIZE 20
 
-void skip_whitespace(char* buffer, int* i) {
-	while (buffer[*i] == ' ' || buffer[*i] == '\n' || buffer[*i] == '\t') {
-		*i += 1;
-	}
-}
+static token* create_token(TokenType type, const char* start, int length);
+static token* create_token_err(const char* message);
 
-token* create_token(TokenType type, const char* start, int length) {
+static char is_digit(char c);
+static char is_alpha(char c);
+static char is_comment(char* buffer, int* i);
+static char is_comment_block(char* buffer, int* i);
+
+static void skip_whitespace(char* buffer, int* i);
+static void skip_comments(char* buffer, int* i);
+
+static token* number(char* buffer, int* i);
+static token* identifier(char* buffer, int* i);
+static token* string(char* buffer, int* i);
+static token* scan_token(char* buffer, int* i);
+
+static token* create_token(TokenType type, const char* start, int length) {
 	token* t = malloc(sizeof(token));
 	t->type = type;
 	t->start = start;
@@ -21,69 +31,33 @@ token* create_token(TokenType type, const char* start, int length) {
 	return t;
 }
 
-token* create_token_err(const char* message) {
+static token* create_token_err(const char* message) {
 	return create_token(TOKEN_ERROR, message, strlen(message));
 }
 
-char is_digit(char c) {
+static char is_digit(char c) {
 	return c >= '0' && c <= '9';
 }
 
-char is_alpha(char c) {
+static char is_alpha(char c) {
 	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
-token* number(char* buffer, int* i) {
-	int start = *i - 1;
-	
-	while (is_digit(buffer[*i])) {
-		*i += 1;
-	}
-
-	int length = *i - start;
-	printf("TOKEN_NUMBER: length = %d, start = %c\n", length, buffer[start]);
-	return create_token(TOKEN_NUMBER, &buffer[start], length);
-}
-
-token* identifier(char* buffer, int* i) {
-	int start = *i - 1;
-	
-	while (is_alpha(buffer[*i]) || buffer[*i] == '_') {
-		*i += 1;
-	}
-
-	int length = *i - start;
-	printf("TOKEN_IDENTIFIER: length = %d, start = %c\n", length, buffer[start]);
-	return create_token(TOKEN_IDENTIFIER, &buffer[start], length);
-}
-
-token* string(char* buffer, int* i) {
-	int start = *i;
-
-	while (buffer[*i] != '"' && buffer[*i] != '\n' && buffer[*i] != '\0') {
-		*i += 1;
-	}
-
-	if (buffer[*i] == '\n' || buffer[*i] == '\0') {
-		return create_token_err("Unterminated string");
-	}
-	
-	int length = *i - start;
-
-	*i += 1;
-	printf("TOKEN_STRING: length = %d, start = %c\n", length, buffer[start]);
-	return create_token(TOKEN_STRING, &buffer[start], length);
-}
-
-char is_comment(char* buffer, int* i) {
+static char is_comment(char* buffer, int* i) {
 	return buffer[*i] == '/' && buffer[*i + 1] == '/';
 }
 
-char is_comment_block(char* buffer, int* i) {
+static char is_comment_block(char* buffer, int* i) {
 	return buffer[*i] == '/' && buffer[*i + 1] == '*';
 }
 
-void skip_comments(char* buffer, int* i) {
+static void skip_whitespace(char* buffer, int* i) {
+	while (buffer[*i] == ' ' || buffer[*i] == '\n' || buffer[*i] == '\t') {
+		*i += 1;
+	}
+}
+
+static void skip_comments(char* buffer, int* i) {
 	while (is_comment(buffer, i) || is_comment_block(buffer, i)) {
 
 		if (is_comment(buffer, i)) {
@@ -107,7 +81,46 @@ void skip_comments(char* buffer, int* i) {
 	}
 }
 
-token* scan_token(char* buffer, int* i) {
+static token* number(char* buffer, int* i) {
+	int start = *i - 1;
+	
+	while (is_digit(buffer[*i])) {
+		*i += 1;
+	}
+
+	int length = *i - start;
+	return create_token(TOKEN_NUMBER, &buffer[start], length);
+}
+
+static token* identifier(char* buffer, int* i) {
+	int start = *i - 1;
+	
+	while (is_alpha(buffer[*i]) || buffer[*i] == '_') {
+		*i += 1;
+	}
+
+	int length = *i - start;
+	return create_token(TOKEN_IDENTIFIER, &buffer[start], length);
+}
+
+static token* string(char* buffer, int* i) {
+	int start = *i;
+
+	while (buffer[*i] != '"' && buffer[*i] != '\n' && buffer[*i] != '\0') {
+		*i += 1;
+	}
+
+	if (buffer[*i] == '\n' || buffer[*i] == '\0') {
+		return create_token_err("Unterminated string");
+	}
+	
+	int length = *i - start;
+
+	*i += 1;
+	return create_token(TOKEN_STRING, &buffer[start], length);
+}
+
+static token* scan_token(char* buffer, int* i) {
 	skip_whitespace(buffer, i);
 	skip_comments(buffer, i);
 
@@ -179,7 +192,7 @@ void tokens_print(token** tokens, int token_count) {
 }
 
 void token_print(token* token) {
-	LOG_HEADER("TOKEN", "length = %d: ", token->length);
+	PRINT_HEADER("TOKEN", "length = %d: ", token->length);
 	for (int j = 0; j < token->length; j++) {
 		printf("%c", token->start[j]);
 	}
