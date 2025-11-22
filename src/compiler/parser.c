@@ -254,29 +254,26 @@ static int parse_parameter_list(parser* parser) {
 }
 
 static int parse_function(parser* parser) {
-	int front = parse_primary_expr(parser);
-	if (front == -1) return -1;
-	if (get_node(parser, front)->type != NODE_IDENTIFIER) {
-		LOG_ERR("Expected identifier in front of function name\n");
-		return -1;
-	}
-	int name = parse_primary_expr(parser);
-	if (name == -1) return -1;
-	if (get_node(parser, name)->type != NODE_IDENTIFIER) {
-		LOG_ERR("Expected function name after datatype\n");
-		return -1;
-	}
-	int parameters = parse_parameter_list(parser);
-	if (parameters == -1) return -1;
-
 	ast_node node = {
 		.type = NODE_FUNC,
 		.token_index = parser->t_pos,
 		.data.node_array.count = 0,
 	};
 
-	node_append(&node, front);
-	node_append(&node, name);
+	while (current_token(parser)->type != TOKEN_PARENTHESIS_OPEN && current_token(parser)->type != TOKEN_EOF) {
+		int front = parse_primary_expr(parser);
+		if (front == -1) return -1;
+
+		if (get_node(parser, front)->type != NODE_IDENTIFIER) {
+			LOG_ERR("Expected identifier in function declaration\n");
+			return -1;
+		}
+
+		node_append(&node, front);
+	}
+	int parameters = parse_parameter_list(parser);
+	if (parameters == -1) return -1;
+
 	node_append(&node, parameters);
 
 	switch (current_token(parser)->type) {

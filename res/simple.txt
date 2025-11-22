@@ -1,4 +1,4 @@
-int func(int a, int b);
+private int func(int a, int b);
 
 int func(int a, int b) {
 	int i = 0
