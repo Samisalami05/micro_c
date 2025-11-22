@@ -242,7 +242,10 @@ static int parse_parameter_list(parser* parser) {
 		parser->t_pos++;
 	}
 	if (current_token(parser)->type != TOKEN_PARENTHESIS_CLOSE) {
-		LOG_ERR("Expected closing parenthesis after parameter list\n");
+		if (current_token(parser)->type != TOKEN_EOF && parser->tokens[parser->t_pos + 1]->type == TOKEN_IDENTIFIER)
+			LOG_ERR("Expected comma between function parameters\n");
+		else
+			LOG_ERR("Expected closing parenthesis after parameter list\n");
 		return -1;
 	}
 	parser->t_pos++;
@@ -316,10 +319,9 @@ void parse(ast_tree* ast, token** tokens) {
 			LOG_ERR("Error detected, exiting\n");
 			exit(EXIT_FAILURE);
 		}
-		
-		int root = ast->root_index;
-		node_append_index(ast, root, index);
+
+		node_append(&ast->nodes[ast->root_index], index);
 	}
-	
+
 	LOG_MSG("parse success\n");
 }

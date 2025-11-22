@@ -52,9 +52,12 @@ int init_node(ast_tree* ast, ast_node node_data) {
 }
 
 void node_append(ast_node* node, int other) {
-	// Implement this
 	node->data.node_array.count++;
-	node->data.node_array.ast_indices = realloc(node->data.node_array.ast_indices, sizeof(int) * node->data.node_array.count);
+	if (node->data.node_array.count > 1)
+		node->data.node_array.ast_indices = realloc(node->data.node_array.ast_indices, sizeof(int) * node->data.node_array.count);
+	else
+		node->data.node_array.ast_indices = malloc(sizeof(int) * node->data.node_array.count);
+
 	node->data.node_array.ast_indices[node->data.node_array.count - 1] = other;
 }
 
