@@ -64,9 +64,6 @@ static void skip_comments(char* buffer, int* i) {
 			while (buffer[*i] != '\n' && buffer[*i] != '\0') {
 				*i += 1;
 			}
-			if (buffer[*i] == '\n') {
-				*i += 1;
-			}
 			skip_whitespace(buffer, i);
 		}
 

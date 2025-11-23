@@ -30,8 +30,25 @@ typedef struct token {
     TokenType type;
     const char* start;
 	int length;
+
+	// int pos
+	// int len
+	// int line_num
 } token;
 
+typedef struct lex_out {
+	char* filename;
+	token* tokens;
+} lex_out;
+
+typedef struct lexer {
+	char* buffer;
+	int line_num;
+	int pos;
+} lexer;
+
+// TODO: implement this
+int token_line(lexer lexer, int token, int* o_len);
 
 token** lex(char* buffer, int* tokenCount);
 
