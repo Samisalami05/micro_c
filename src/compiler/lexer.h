@@ -28,17 +28,15 @@ typedef enum TokenType {
 
 typedef struct token {
     TokenType type;
-    const char* start;
-	int length;
-
-	// int pos
-	// int len
-	// int line_num
+	int pos;
+	int len;
+	int line_num;
 } token;
 
 typedef struct lex_out {
 	char* filename;
 	char* buffer;
+	int token_count;
 	token* tokens;
 	// int *columns;
 	// int *line;
@@ -48,12 +46,14 @@ typedef struct lexer {
 	char* buffer;
 	int line_num;
 	int pos;
+	lex_out out;
+	int allocated;
 } lexer;
 
 // TODO: implement this
 int token_line(lex_out lex, int token, int* o_len);
 
-token** lex(char* buffer, int* tokenCount);
+lex_out lex(char* buffer);
 
 void tokens_print(token** tokens, int token_count);
 

@@ -17,6 +17,7 @@ static char is_comment_block(char* buffer, int* i);
 static void skip_whitespace(char* buffer, int* i);
 static void skip_comments(char* buffer, int* i);
 
+static void append_token(lexer* lexer, token* token);
 static token* number(char* buffer, int* i);
 static token* identifier(char* buffer, int* i);
 static token* string(char* buffer, int* i);
@@ -78,6 +79,17 @@ static void skip_comments(char* buffer, int* i) {
 	}
 }
 
+static void append_token(lexer* lexer, token* t) {
+	if (lexer->allocated <= lexer->out.token_count && lexer->allocated > ALLOCATION_SIZE) {
+		lexer->out.tokens = realloc(lexer->out.tokens, (lexer->out.token_count + ALLOCATION_SIZE) * sizeof(token));
+		lexer->allocated += ALLOCATION_SIZE;
+	}
+}
+
+static char current(lexer* lexer) {
+	return lexer->buffer[lexer->pos];
+}
+
 static token* number(char* buffer, int* i) {
 	int start = *i - 1;
 	
@@ -100,7 +112,7 @@ static token* identifier(char* buffer, int* i) {
 	return create_token(TOKEN_IDENTIFIER, &buffer[start], length);
 }
 
-static token* string(char* buffer, int* i) {
+static void string(lexer* lexer) {
 	int start = *i;
 
 	while (buffer[*i] != '"' && buffer[*i] != '\n' && buffer[*i] != '\0') {
@@ -117,11 +129,18 @@ static token* string(char* buffer, int* i) {
 	return create_token(TOKEN_STRING, &buffer[start], length);
 }
 
-static token* scan_token(char* buffer, int* i) {
-	skip_whitespace(buffer, i);
-	skip_comments(buffer, i);
+static token* scan_token(lexer* lexer) {
+	skip_whitespace(lexer);
+	skip_comments(lexer);
 
-	char c = buffer[*i];
+	token t = {
+		.type = TOKEN_ERROR,
+		.len = 0,
+		.pos = lexer->pos;
+		.line_num = lexer.line_num;
+	};
+
+	char c = current(lexer);
 	if (c == '\0') return create_token(TOKEN_EOF, &buffer[*i], 1);
 
 	*i += 1;
@@ -154,44 +173,54 @@ static token* scan_token(char* buffer, int* i) {
 	return create_token_err("Unexpected character found");
 }
 
-token** lex(char* buffer, int* tokenCount) {
-	*tokenCount = 0;
-	token** tokens = malloc(sizeof(token*) * ALLOCATION_SIZE);
+lex_out lex(char* buffer) {
+	lex_out out = {
+		.buffer = buffer,
+		.tokens = malloc(sizeof(token) * ALLOCATION_SIZE);
+		.filename = "placeholder",
+		.token_count = 0,
+	};
 
-	int allocated = ALLOCATION_SIZE;
+	lexer lexer = {
+		.pos = 0,
+		.line_num = 0,
+		.buffer = buffer,
+		.out = out,
+		.allocated = ALLOCATION_SIZE;
+	};
 
-	int i = 0;
 	while (buffer[i] != '\0') {
-		if (allocated <= *tokenCount) {
-			tokens = realloc(tokens, (*tokenCount + ALLOCATION_SIZE) * sizeof(token*));
+		int token_count = lexer.out.token_count;
+		if (allocated <= token_count) {
+			tokens = realloc(tokens, (token_count + ALLOCATION_SIZE) * sizeof(token*));
 			allocated += ALLOCATION_SIZE;
 		}
 
-		token* t = scan_token(buffer, &i);
-		tokens[*tokenCount] = t;
-		*tokenCount += 1;
+		scan_token(&lexer);
+		tokens[token_count] = t;
+		out.token_count += 1;
 
-		if (t->type == TOKEN_ERROR) {
-			LOG_ERR("%s\n", t->start);
-			return tokens;
+		if (t.type == TOKEN_ERROR) {
+			LOG_ERR("%s\n", t.start);
+			return out;
 		}
 	}
-	return tokens;
+	return out;
 }
 
-void tokens_print(token** tokens, int token_count) {
+void tokens_print(token* tokens, int token_count) {
 	for (int i = 0; i < token_count; i++) {
-		token* t = tokens[i];
+		token t = tokens[i];
 		
 		token_print(t);
 	}
 	printf("\n");
 }
 
-void token_print(token* token) {
-	PRINT_HEADER("TOKEN", "length = %d: ", token->length);
-	for (int j = 0; j < token->length; j++) {
-		printf("%c", token->start[j]);
+void token_print(token token) {
+	PRINT_HEADER("TOKEN", "length = %d: ", token.length);
+	for (int j = 0; j < token.length; j++) {
+		printf("%c", token.start[j]);
 	}
 	printf("\n");
 }
