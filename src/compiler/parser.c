@@ -4,6 +4,7 @@
 #include <logger.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <error.h>
 
 typedef struct parser {
 	ast_tree* ast;
@@ -13,6 +14,7 @@ typedef struct parser {
 
 static token* current_token(parser* parser);
 static ast_node* get_node(parser* parser, int index);
+static void parser_error(char* filename, token token, char* msg);
 
 static int parse_primary_expr(parser* parser);
 static int parse_parenthesis(parser* parser);
@@ -32,6 +34,18 @@ static ast_node* get_node(parser* parser, int index) {
 	return &parser->ast->nodes[index];
 }
 
+static void parser_error(char* filename, token token, char* msg) {
+	printf("%s:%d: error: %s\n", filename, token.length, msg);
+	char* line = "malloc(sizeof(int) * 3);";
+	printf("%s\n", line);
+	int column = 10;
+
+	for (int i = 0; i < column; i++) {
+		printf(" ");
+	}
+	printf("~\n");
+}
+
 static int parse_primary_expr(parser* parser) {
 	token* token = current_token(parser);
 	ast_nodetype type;
@@ -45,7 +59,7 @@ static int parse_primary_expr(parser* parser) {
 			break;
 		case TOKEN_PARENTHESIS_OPEN: return parse_parenthesis(parser);
 		default:
-			LOG_ERR("missing primary expression at token index %d\n", parser->t_pos);
+			LOG_ERROR(ERROR_PARSER, "missing primary expression at token index %d\n", parser->t_pos);
 			return -1;
 	}
 
@@ -64,7 +78,7 @@ static int parse_parenthesis(parser* parser) {
 	int index = parse_expression(parser);
 
 	if (current_token(parser)->type != TOKEN_PARENTHESIS_CLOSE) {
-		LOG_ERR("ERROR: No closing parenthesis on expression\n");
+		LOG_ERROR(ERROR_PARSER, "ERROR: No closing parenthesis on expression\n");
 		return -1;
 	}
 
@@ -180,7 +194,7 @@ static int parse_block(parser* parser) {
 		block_node.data.node_array.count = i;
 
 		if (current_token(parser)->type != TOKEN_BRACE_CLOSE) {
-			LOG_ERR("No closing bracket found for block\n");
+			LOG_ERROR(ERROR_PARSER, "No closing bracket found for block\n");
 			return -1;
 		}
 
@@ -197,12 +211,12 @@ static int parse_block(parser* parser) {
 static int parse_parameter(parser* parser) {
 	int datatype = parse_primary_expr(parser);
 	if (parser->ast->nodes[datatype].type != NODE_IDENTIFIER) {
-		LOG_ERR("Expected identifier as datatype in variable declaration");
+		LOG_ERROR(ERROR_PARSER, "Expected identifier as datatype in variable declaration");
 		return -1;
 	}
 	int name = parse_primary_expr(parser);
 	if (parser->ast->nodes[name].type != NODE_IDENTIFIER) {
-		LOG_ERR("Expected identifier as variable name\n");
+		LOG_ERROR(ERROR_PARSER, "Expected identifier as variable name\n");
 		return -1;
 	}
 
@@ -219,7 +233,7 @@ static int parse_parameter(parser* parser) {
 
 static int parse_parameter_list(parser* parser) {
 	if (current_token(parser)->type != TOKEN_PARENTHESIS_OPEN) {
-		LOG_ERR("Expected parameter list after function name\n");
+		LOG_ERROR(ERROR_PARSER, "Expected parameter list after function name\n");
 		return -1;
 	}
 	parser->t_pos++;
@@ -243,9 +257,9 @@ static int parse_parameter_list(parser* parser) {
 	}
 	if (current_token(parser)->type != TOKEN_PARENTHESIS_CLOSE) {
 		if (current_token(parser)->type != TOKEN_EOF && parser->tokens[parser->t_pos + 1]->type == TOKEN_IDENTIFIER)
-			LOG_ERR("Expected comma between function parameters\n");
+			LOG_ERROR(ERROR_PARSER, "Expected comma between function parameters\n");
 		else
-			LOG_ERR("Expected closing parenthesis after parameter list\n");
+			LOG_ERROR(ERROR_PARSER, "Expected closing parenthesis after parameter list\n");
 		return -1;
 	}
 	parser->t_pos++;
@@ -309,16 +323,18 @@ void parse(ast_tree* ast, token** tokens) {
 				index = parse_function(&parser);
 				break;
 			default:
-				LOG_ERR("Unknown token in file statement\n");
+				LOG_ERROR(ERROR_PARSER, "Unknown token in file statement\n");
 		}
 
 		if (index < 0) {
-			LOG_ERR("Error detected, exiting\n");
+			LOG_ERROR(ERROR_PARSER, "Error detected, exiting\n");
 			exit(EXIT_FAILURE);
 		}
 
 		node_append(&ast->nodes[ast->root_index], index);
 	}
+
+	parser_error("main.c", *parser.tokens[1], "Invalid allocation of memery");
 
 	LOG_MSG("parse success\n");
 }

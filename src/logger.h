@@ -15,6 +15,7 @@
 #define LOG_MSG(msg, ...) fprintf(stderr, "%s%s: <%d> %sMSG:%s " msg , COL_HEADER, __FILE_NAME__, __LINE__, COL_OKBLUE, COL_ENDC, ##__VA_ARGS__)
 #define LOG_WARNING(msg, ...) fprintf(stderr, "%s%s: <%d> %sWARNING:%s " msg , COL_HEADER, __FILE_NAME__, __LINE__, COL_WARNING, COL_ENDC, ##__VA_ARGS__)
 #define LOG_ERR(msg, ...) fprintf(stderr, "%s%s: <%d> %sERROR:%s " msg , COL_HEADER, __FILE_NAME__, __LINE__, COL_FAILURE, COL_ENDC, ##__VA_ARGS__)
+#define LOG_ERROR(type, msg, ...) fprintf(stderr, "%s%s: <%d> %s%s:%s " msg , COL_HEADER, __FILE_NAME__, __LINE__, COL_FAILURE, error_str(type), COL_ENDC, ##__VA_ARGS__)
 
 #define PRINT_HEADER(header, msg, ...) fprintf(stderr, "%s%s:%s " msg , COL_OKCYAN, header, COL_ENDC, ##__VA_ARGS__)
 #define PRINT_MSG(msg, ...) fprintf(stderr, "%sMSG:%s " msg , COL_OKBLUE, COL_ENDC, ##__VA_ARGS__)
